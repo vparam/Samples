@@ -457,9 +457,42 @@ def _make_excerpt(text: str, query: str, width: int = 240) -> str:
     return snippet
 
 
-# Module-level singleton
+# Module-level singleton (local backend by default; the factory below
+# may swap in the Azure backend instead based on MJS_SEARCH_BACKEND).
 _index = Index()
 
 
-def get_index() -> Index:
+def get_index():
+    """Return the active retrieval backend.
+
+    Default: the in-process LocalIndex (TF-IDF + BM25). If MJS_SEARCH_BACKEND
+    is set to 'azure' AND AZURE_SEARCH_* env vars are configured, route to
+    the Azure AI Search backend instead. The two backends share the same
+    response envelope, so callers (main.py, eval.py, demo_queries.py) do
+    not need to know which is active.
+    """
+    global _index
+    import os
+    backend = os.environ.get("MJS_SEARCH_BACKEND", "local").lower()
+    if backend == "azure":
+        from . import azure_search
+        if not isinstance(_index, Index):
+            return _index  # already an AzureIndex
+        if azure_search.is_configured():
+            _index = azure_search.AzureIndex()
+        else:
+            # Azure asked for but not configured — fail loudly rather
+            # than silently fall back, so misconfigured deploys are
+            # caught at boot.
+            raise RuntimeError(
+                "MJS_SEARCH_BACKEND=azure but AZURE_SEARCH_ENDPOINT / "
+                "AZURE_SEARCH_KEY are not set. See prototype/README.md."
+            )
     return _index
+
+
+def reset_index_for_tests() -> None:
+    """Drop the singleton so the next get_index() rebuilds. Used by the
+    test fixtures that swap backends per test."""
+    global _index
+    _index = Index()

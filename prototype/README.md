@@ -119,6 +119,78 @@ alongside the seed content.
 | §7 Issue queue                          | `POST /api/issues`, admin queue at `GET /api/admin/issues`          |
 | §7 Analytics                            | `queries`, `clicks`, dashboard at `GET /api/admin/analytics`        |
 
+## Switching to real Azure AI Search
+
+The prototype defaults to a local TF-IDF + BM25 backend so it can run
+offline with no credentials. A pluggable Azure AI Search backend ships
+in the same tree (`prototype/backend/azure_search.py`) and can be
+switched on with environment variables — no code changes required.
+
+```bash
+# Local backend (default) — no env vars needed
+uvicorn prototype.backend.main:app
+
+# Azure AI Search backend
+export MJS_SEARCH_BACKEND=azure
+export AZURE_SEARCH_ENDPOINT=https://<your-service>.search.windows.net
+export AZURE_SEARCH_INDEX=mjs-discovery
+export AZURE_SEARCH_KEY=<admin-key>          # or use managed identity
+export MJS_AZURE_RERANKER_THRESHOLD=1.5      # @search.rerankerScore floor
+uvicorn prototype.backend.main:app
+```
+
+What flips when `MJS_SEARCH_BACKEND=azure`:
+
+| Path | Local | Azure |
+|---|---|---|
+| Read | TF-IDF + BM25 + score-based fusion + recency boost | AI Search hybrid (BM25 + vector) → semantic re-rank → freshness scoring profile (capped at 1.3×) |
+| No-results gate | bm25/cos thresholds + per-token coverage | top `@search.rerankerScore < 1.5` → no_results |
+| Embeddings | none (TF-IDF) | `text-embedding-3-large` (3072d) via AI Search integrated vectorisation |
+| Recency | client-side multiplier | scoring profile `recency-boost` (architecture §5) |
+| Push on ingest | write SQLite chunks | also POST `mergeOrUpload` batch to AI Search after commit |
+| Soft-delete | mark `deleted_at` in SQLite | also POST `delete` batch to AI Search |
+
+What does **not** change:
+
+- Postgres / SQLite is still source-of-truth (architecture §2).
+- The Search API response envelope is identical — UI, tests, and the
+  `eval.py` / `demo_queries.py` scripts all work without modification.
+- Grounding is still architectural: the AI Search semantic re-ranker is
+  a transformer cross-encoder, not a generative model. There is still
+  no LLM in the read path.
+- Attack-pattern detection runs client-side before any AI Search call,
+  saving the round-trip on adversarial queries.
+
+### One-time setup against a real AI Search resource
+
+```bash
+# 1. Create the index from samples/storage/ai-search-index.json
+export AZURE_SEARCH_ENDPOINT=https://<service>.search.windows.net
+export AZURE_SEARCH_KEY=<admin-key>
+python -c "from prototype.backend import azure_search; \
+  print(azure_search.create_or_update_index())"
+
+# 2. Replicate the seed corpus to AI Search
+export MJS_SEARCH_BACKEND=azure
+python -c "from prototype.backend import db, ingestion; \
+  db.init_db(); print(ingestion.ingest_seed())"
+```
+
+Production additionally swaps `AZURE_SEARCH_KEY` for managed-identity
+auth (architecture §9 — Key Vault + system-assigned identity on the
+hosting workload) and adds a paired-region replica.
+
+### Testing without Azure access
+
+`tests/test_azure_backend.py` exercises the full Azure code path
+(create-index, push, search, delete, factory wiring, ingestion
+replication) using `httpx.MockTransport`. No real Azure account is
+needed. Run with:
+
+```bash
+pytest tests/test_azure_backend.py
+```
+
 ## What is **not** production-grade in this prototype
 
 The architecture writeup describes what changes for a 12-week production
@@ -127,12 +199,14 @@ engagement (§9). Concretely, in this prototype:
 - **Embeddings:** TF-IDF stand-in, not Azure OpenAI
   `text-embedding-3-large`. TF-IDF was chosen so the demo runs with no
   network, no API key, and no GPU.
-- **Search engine:** scikit-learn + `rank-bm25`, not Azure AI Search.
-  Therefore no transformer-cross-encoder semantic re-ranker. To
-  compensate on this small corpus, the prototype uses score-based
+- **Search engine (default):** scikit-learn + `rank-bm25`, not Azure AI
+  Search. Therefore no transformer-cross-encoder semantic re-ranker. To
+  compensate on this small corpus, the local backend uses score-based
   hybrid fusion (BM25 normalised + cosine, weighted) instead of
   reciprocal rank fusion — the architecture writeup explains the
-  production path (§4–§5).
+  production path (§4–§5).  Setting `MJS_SEARCH_BACKEND=azure` plus
+  `AZURE_SEARCH_*` env vars routes the read path to real Azure AI
+  Search; see "Switching to real Azure AI Search" above.
 - **Auth:** JWT-shaped HMAC-SHA256 tokens, not real Entra ID OIDC. Token
   shape (`sub`, `email`, `roles`) matches Entra so the swap is
   mechanical (§7).

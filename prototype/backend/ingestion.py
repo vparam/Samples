@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -170,12 +171,42 @@ def upsert_item(cx, item: SourceItem) -> tuple[str, int]:
     return (action, doc_id)
 
 
-def soft_delete_missing(cx, url_prefix: str, present_urls: set[str]) -> int:
-    """Mark items as deleted when they fall out of the source manifest."""
+def _replicate_to_azure(doc_ids: Iterable[int], deleted_ids: Iterable[int] = ()) -> None:
+    """Push the listed documents to AI Search when Azure backend is active.
+
+    Called AFTER the SQL transaction commits. If we called it inside the
+    transaction, push_document's read connection would race the writer's
+    lock (architecture §2: Postgres is source-of-truth, AI Search is the
+    derived index — the push is best-effort and resync-able).
+    """
+    if os.environ.get("MJS_SEARCH_BACKEND", "").lower() != "azure":
+        return
+    try:
+        from . import azure_search
+        if not azure_search.is_configured():
+            return
+        for doc_id in doc_ids:
+            azure_search.push_document(doc_id)
+        for doc_id in deleted_ids:
+            azure_search.delete_document(doc_id)
+    except Exception:  # noqa: BLE001
+        import logging
+        logging.getLogger("mjs.ingestion").exception(
+            "Azure replication failed; will resync on next reconciliation",
+        )
+
+
+def soft_delete_missing(cx, url_prefix: str, present_urls: set[str]
+                        ) -> tuple[int, list[int]]:
+    """Mark items as deleted when they fall out of the source manifest.
+
+    Returns (count, deleted_ids). The caller is expected to drive
+    Azure replication for the IDs *after* the SQL transaction commits.
+    """
     rows = cx.execute(
         "SELECT id, source_url FROM documents WHERE deleted_at IS NULL"
     ).fetchall()
-    deleted = 0
+    deleted_ids: list[int] = []
     for r in rows:
         if not r["source_url"].startswith(url_prefix):
             continue
@@ -184,8 +215,8 @@ def soft_delete_missing(cx, url_prefix: str, present_urls: set[str]) -> int:
                 "UPDATE documents SET deleted_at = ? WHERE id = ?",
                 (_now(), r["id"]),
             )
-            deleted += 1
-    return deleted
+            deleted_ids.append(r["id"])
+    return (len(deleted_ids), deleted_ids)
 
 
 # =============================================================================
@@ -203,16 +234,21 @@ def ingest_seed() -> dict:
         for r in raw
     ]
     counts = {"inserted": 0, "updated": 0, "unchanged": 0, "deleted": 0}
+    touched: list[int] = []
+    deleted_ids: list[int] = []
     with db.connect() as cx:
         cx.execute("BEGIN")
         for it in items:
-            action, _ = upsert_item(cx, it)
+            action, doc_id = upsert_item(cx, it)
             counts[action] += 1
+            if action != "unchanged":
+                touched.append(doc_id)
         present = {it.source_url for it in items}
-        counts["deleted"] = soft_delete_missing(
-            cx, "https://example.mjs-packaging.com", present
+        counts["deleted"], deleted_ids = soft_delete_missing(
+            cx, "https://example.mjs-packaging.com", present,
         )
         cx.execute("COMMIT")
+    _replicate_to_azure(touched, deleted_ids)
     return counts
 
 
@@ -363,6 +399,8 @@ def ingest_sitemap(sitemap_url: str, *, fetcher: Fetcher | None = None,
     """
     counts = {"inserted": 0, "updated": 0, "unchanged": 0, "deleted": 0,
               "skipped_304": 0, "errors": 0}
+    touched: list[int] = []
+    deleted_ids: list[int] = []
     with db.connect() as cx:
         cx.execute("BEGIN")
         try:
@@ -394,18 +432,23 @@ def ingest_sitemap(sitemap_url: str, *, fetcher: Fetcher | None = None,
                     body=meta["body"],
                     source_tags=meta["source_tags"],
                 )
-                action, _ = upsert_item(cx, item)
+                action, doc_id = upsert_item(cx, item)
                 counts[action] += 1
+                if action != "unchanged":
+                    touched.append(doc_id)
             # URL-prefix soft-delete: anything previously ingested under
             # the same site host that no longer appears in the sitemap.
             from urllib.parse import urlparse
             parsed = urlparse(sitemap_url)
             site_prefix = f"{parsed.scheme}://{parsed.netloc}/"
-            counts["deleted"] = soft_delete_missing(cx, site_prefix, present_urls)
+            counts["deleted"], deleted_ids = soft_delete_missing(
+                cx, site_prefix, present_urls,
+            )
             cx.execute("COMMIT")
         except Exception:
             cx.execute("ROLLBACK")
             raise
+    _replicate_to_azure(touched, deleted_ids)
     return counts
 
 
@@ -515,6 +558,7 @@ def ingest_rss(feed_url: str, content_type: str = "blog",
     prefix level."""
     counts = {"inserted": 0, "updated": 0, "unchanged": 0, "deleted": 0,
               "skipped_304": 0, "errors": 0}
+    touched: list[int] = []
     with db.connect() as cx:
         cx.execute("BEGIN")
         try:
@@ -532,12 +576,15 @@ def ingest_rss(feed_url: str, content_type: str = "blog",
                             it.transcript_cues = parse_vtt(t_body.decode("utf-8", "ignore"))
                         except Exception:
                             it.transcript_cues = None
-                action, _ = upsert_item(cx, it)
+                action, doc_id = upsert_item(cx, it)
                 counts[action] += 1
+                if action != "unchanged":
+                    touched.append(doc_id)
             cx.execute("COMMIT")
         except Exception:
             cx.execute("ROLLBACK")
             raise
+    _replicate_to_azure(touched)
     return counts
 
 
@@ -583,12 +630,16 @@ def ingest_youtube_payload(xml_bytes: bytes) -> dict:
     if not items:
         counts["errors"] = 1
         return counts
+    touched: list[int] = []
     with db.connect() as cx:
         cx.execute("BEGIN")
         for it in items:
-            action, _ = upsert_item(cx, it)
+            action, doc_id = upsert_item(cx, it)
             counts[action] = counts.get(action, 0) + 1
+            if action != "unchanged":
+                touched.append(doc_id)
         cx.execute("COMMIT")
+    _replicate_to_azure(touched)
     return counts
 
 
