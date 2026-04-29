@@ -103,3 +103,67 @@ def test_query_max_length_enforced(standard_client):
 def test_empty_query_rejected(standard_client):
     r = standard_client.get("/api/search", params={"q": ""})
     assert r.status_code == 422
+
+
+# ----------------------------------------------------------------------------
+# Improvements landed after the first evaluation pass (EVALUATION.md)
+# ----------------------------------------------------------------------------
+
+def test_synonym_expansion_finds_pcr_in_recycled_pet_page(standard_client):
+    """Closes EVALUATION.md C4. 'PCR' expands to 'post-consumer recycled' so
+    the recycled-PET product page wins over a passing mention in a blog."""
+    r = standard_client.get("/api/search", params={"q": "PCR content for PET"})
+    body = r.json()
+    assert body["no_results"] is False
+    assert "recycled PET" in body["results"][0]["title"]
+
+
+def test_synonym_expansion_finds_bioplastics_via_pla(standard_client):
+    """Closes EVALUATION.md D1 vocabulary mismatch. 'bioplastics' expands
+    to 'bio-based PLA' so the sustainable-materials roadmap wins."""
+    r = standard_client.get("/api/search",
+                            params={"q": "why don't we use bioplastics?"})
+    body = r.json()
+    assert body["no_results"] is False
+    assert "sustainable materials" in body["results"][0]["title"].lower()
+
+
+def test_recency_intent_gates_full_boost(standard_client):
+    """Closes EVALUATION.md A5 ranking flip. Vague-intent queries no longer
+    have ranking flipped by recency: the partnership content beats the
+    fresh supply-chain post."""
+    r = standard_client.get(
+        "/api/search",
+        params={"q": "I want content around why a customer should work with us"},
+    )
+    body = r.json()
+    titles = [c["title"] for c in body["results"]]
+    assert any("Why customers choose MJS" in t for t in titles)
+    # The partnership content should be at #1, ahead of the supply-chain post.
+    idx_part = next(
+        (i for i, t in enumerate(titles) if "Why customers choose MJS" in t),
+        len(titles),
+    )
+    idx_supply = next(
+        (i for i, t in enumerate(titles) if "Recent supply chain update" in t),
+        len(titles),
+    )
+    assert idx_part < idx_supply
+
+
+def test_pure_recency_intent_returns_date_sorted_listing(standard_client):
+    """Closes EVALUATION.md C2. 'newest content' switches to a date-sorted
+    listing rather than relying on accidental token matches."""
+    r = standard_client.get("/api/search", params={"q": "newest content"})
+    body = r.json()
+    assert body["no_results"] is False
+    assert body.get("mode") == "recent"
+    dates = [c["publish_date"] for c in body["results"] if c["publish_date"]]
+    assert dates == sorted(dates, reverse=True)
+
+
+def test_degenerate_query_returns_no_results(standard_client):
+    """Closes EVALUATION.md D5. 'show me everything' has no usable tokens."""
+    r = standard_client.get("/api/search", params={"q": "show me everything"})
+    body = r.json()
+    assert body["no_results"] is True

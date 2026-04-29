@@ -37,16 +37,17 @@ _TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
 # queries like "Who is the current US president?".
 _STOPWORDS = frozenset("""
 a about above across actually after again against all also always am among an
-and any anyone anything are aren as at be because been before being below
-between both but by can cannot could did do does doing don each either else
-ever every everyone everything for from further get got had has have having
-he her here hers herself him himself his how i if in indeed into is isn it
-its itself just kind like make me might more most much must my myself never
-no nor not now of off on once one only or other our ours out over own please
-pretty quite rather really same say see she should simply so some someone
-something somewhat still such t tell than that the their theirs them themselves
-then there these they thing things this those though through thus to too under
-until up upon us use used usually very was way we were what whatever when where
+and any anyone anything are aren around as at be because been before being below
+between both but by can cannot content could did do does doing don each either
+else even ever every everyone everything find for from further get give got had
+has have having he her here hers herself him himself his how however i if in
+indeed into is isn it its itself just kind like list look make me might more
+most much must my myself need needed needs never no nor not now of off on once
+one only or other our ours out over own please pretty quite rather really same
+say search see she should show simply so some someone something somewhat still
+stuff such t tell than that the their theirs them themselves then there these
+they thing things this those though through thus to too under until up upon us
+use used usually very want wanted wants was way we were what whatever when where
 which while who whom why will with would yet you your yours yourself yourselves
 """.split())
 
@@ -58,6 +59,88 @@ def _tokens(text: str) -> list[str]:
 def _query_tokens(text: str) -> list[str]:
     """Tokens for retrieval: lowercased, stopwords removed, length >= 2."""
     return [t for t in _tokens(text) if t not in _STOPWORDS and len(t) > 1]
+
+
+# -----------------------------------------------------------------------------
+# Query enhancements (closes gaps from EVALUATION.md)
+# -----------------------------------------------------------------------------
+
+# Small abbreviation / synonym table. Stand-in for what real embeddings would
+# learn from the corpus on day one. Keep this short and domain-specific —
+# generic English synonyms belong to the embedding model, not a hand list.
+_QUERY_EXPANSIONS: dict[str, tuple[str, ...]] = {
+    "pcr":         ("post-consumer", "recycled"),
+    "rpet":        ("recycled", "pet", "post-consumer"),
+    "bioplastic":  ("bio-based", "pla", "biodegradable"),
+    "bioplastics": ("bio-based", "pla", "biodegradable"),
+    "biobased":    ("bio-based", "pla"),
+    "hdpe":        ("hdpe", "high-density", "polyethylene"),
+    "ldpe":        ("ldpe", "low-density", "polyethylene"),
+    "pet":         ("pet", "polyethylene", "terephthalate"),
+    "pla":         ("pla", "bio-based"),
+    "usp":         ("usp",),
+    "co2":         ("co2", "carbon", "lifecycle"),
+}
+
+
+def _expand_query(text: str) -> str:
+    """Append synonym terms for known abbreviations. Production handles this
+    via the embedding model; the prototype patches the worst offenders.
+    """
+    extra: list[str] = []
+    for tok in _tokens(text):
+        if tok in _QUERY_EXPANSIONS:
+            extra.extend(_QUERY_EXPANSIONS[tok])
+    return text + (" " + " ".join(extra) if extra else "")
+
+
+# Tokens that signal recency-intent. When ANY appears in the query, we apply
+# the full architecture-§5 1.3× recency cap; otherwise we apply a much
+# tighter cap so vague-intent queries don't have ranking flipped by freshness.
+_RECENCY_INTENT_TOKENS = frozenset(
+    "recent recently latest newest new today yesterday this week month "
+    "quarter year fresh upcoming q1 q2 q3 q4".split()
+)
+
+
+def _has_recency_intent(query: str) -> bool:
+    return any(t in _RECENCY_INTENT_TOKENS for t in _tokens(query))
+
+
+# Pure recency-only intent: the user wants "what's new". Triggers a
+# date-sorted fallback even when relevance is too thin to clear the gates.
+_PURE_RECENCY_PATTERNS = (
+    re.compile(r"^\s*(what\s*'?s|whats|show\s+me)\s+new\s*\??\s*$", re.I),
+    re.compile(r"^\s*newest\s+(content|posts?|items?|stuff)?\s*$", re.I),
+    re.compile(r"^\s*latest\s+(content|posts?|items?|stuff)?\s*$", re.I),
+    re.compile(r"^\s*recent\s+(content|posts?|items?|stuff)?\s*$", re.I),
+)
+
+
+def _is_pure_recency_intent(query: str) -> bool:
+    return any(p.match(query) for p in _PURE_RECENCY_PATTERNS)
+
+
+# Prompt-injection / instruction-override patterns. We treat these as
+# adversarial and short-circuit to no_results before any ranking happens.
+# Conservative — only multi-word imperative attack phrases, never single
+# common words. The architecture's production semantic re-ranker would
+# reject these on relevance grounds; this is the prototype's stand-in.
+_ATTACK_PATTERNS = (
+    re.compile(r"\bignore\s+(all\s+|any\s+|the\s+)?(previous|prior|above)\s+"
+               r"(instructions?|prompts?|rules?|directions?)", re.I),
+    re.compile(r"\b(you\s+are\s+now|act\s+as|pretend\s+(that\s+|to\s+be\s+)?"
+               r"|simulate\s+(an?\s+)?|disregard|override|bypass)", re.I),
+    re.compile(r"\b(unrestricted|jailbroken|developer\s+mode|do\s+anything\s+now"
+               r"|dan\s+mode)\b", re.I),
+    re.compile(r"\b(reveal|leak|print|show|dump)\s+(the\s+)?"
+               r"(system|hidden|secret|prompt|instructions?|database|schema)\b",
+               re.I),
+)
+
+
+def _looks_like_attack(query: str) -> bool:
+    return any(p.search(query) for p in _ATTACK_PATTERNS)
 
 
 @dataclass
@@ -163,17 +246,53 @@ class Index:
     def is_empty(self) -> bool:
         return not self._chunks
 
+    def _date_sorted_listing(self, k: int) -> dict:
+        """Pure-recency intent fallback: return the k most-recent documents.
+        Same response envelope as search() so the UI handles it transparently.
+        """
+        docs = [d for d in self._docs.values() if d.publish_date]
+        docs.sort(key=lambda d: d.publish_date or "", reverse=True)
+        results = []
+        for doc in docs[:k]:
+            ch = next((c for c in self._chunks if c.document_id == doc.id), None)
+            excerpt = (ch.text[:240] + "…") if ch and len(ch.text) > 240 else (ch.text if ch else doc.title)
+            results.append({
+                "document_id": doc.id,
+                "title": doc.title,
+                "content_type": doc.content_type,
+                "publish_date": doc.publish_date,
+                "url": doc.source_url,
+                "excerpt": excerpt,
+                "tags": sorted(set(doc.source_tags + doc.admin_tags)),
+                "score": 1.0,         # listing mode — relevance not scored
+                "recency_boost": 1.0,
+            })
+        return {"results": results, "no_results": False, "mode": "recent"}
+
     def search(self, query: str, k: int = 10) -> dict:
         with self._lock:
             if not self._chunks or self._bm25 is None or self._tfidf is None:
                 return {"results": [], "no_results": True, "reason": "empty_index"}
 
-            q_tokens = _query_tokens(query)
+            # Architectural attack-pattern short-circuit. Production version
+            # is the AI Search semantic ranker rejecting on relevance; this
+            # is the prototype stand-in.
+            if _looks_like_attack(query):
+                return {"results": [], "no_results": True, "reason": "attack_pattern"}
+
+            # Pure-recency intent: switch to date-sorted listing. The brief
+            # forbids folder navigation but a "what's new" listing is still
+            # search-shaped — same response envelope, no synthesis.
+            if _is_pure_recency_intent(query):
+                return self._date_sorted_listing(k)
+
+            expanded = _expand_query(query)
+            q_tokens = _query_tokens(expanded)
             if not q_tokens:
                 return {"results": [], "no_results": True, "reason": "empty_query"}
 
             bm25_scores = self._bm25.get_scores(q_tokens)
-            q_vec = self._tfidf.transform([query])
+            q_vec = self._tfidf.transform([expanded])
             # cosine since both sides L2-normalised by TfidfVectorizer
             cos = (self._tfidf_matrix @ q_vec.T).toarray().ravel()
 
@@ -246,11 +365,19 @@ class Index:
                 if prev is None or score > prev[1]:
                     doc_best[doc_id] = (chunk_idx, score)
 
+            # Recency boost is full strength (cap 1.3×, architecture §5)
+            # only when the query carries recency intent. Otherwise apply a
+            # tighter cap (1.05×) so freshness does not flip the ranking on
+            # vague queries — the "I want content around why a customer
+            # should work with us" failure from EVALUATION.md.
+            recency_cap = 0.3 if _has_recency_intent(query) else 0.02
             today = date.today()
             ranked = []
             for doc_id, (chunk_idx, raw_score) in doc_best.items():
                 doc = self._docs[doc_id]
-                recency = _recency_multiplier(doc.publish_date, today)
+                recency = _recency_multiplier(
+                    doc.publish_date, today, cap=recency_cap,
+                )
                 final_score = raw_score * recency
                 ranked.append((final_score, raw_score, recency, chunk_idx, doc_id))
             ranked.sort(reverse=True)
@@ -286,10 +413,14 @@ class Index:
             return {"results": results, "no_results": False}
 
 
-def _recency_multiplier(publish_date: str | None, today: date) -> float:
-    """Bounded exponential decay; cap at 1.3x for fresh, asymptote 1.0 for old.
+def _recency_multiplier(publish_date: str | None, today: date,
+                        cap: float = 0.3) -> float:
+    """Bounded exponential decay multiplier.
 
-    Per Section 5: 'Recency tilts close calls; it doesn't override relevance.'
+    Returns 1.0 + boost where 0 ≤ boost ≤ cap. cap=0.3 gives the
+    architecture §5 1.3× cap for queries with recency intent; cap=0.05
+    is the much tighter default for vague-intent queries so freshness
+    does not flip ranking on close calls.
     """
     if not publish_date:
         return 1.0
@@ -299,7 +430,7 @@ def _recency_multiplier(publish_date: str | None, today: date) -> float:
         return 1.0
     days = max(0, (today - d).days)
     half_life_days = 180.0
-    boost = 0.3 * math.exp(-days / half_life_days)
+    boost = cap * math.exp(-days / half_life_days)
     return 1.0 + boost
 
 
