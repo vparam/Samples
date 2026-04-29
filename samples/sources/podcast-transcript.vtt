@@ -1,0 +1,28 @@
+WEBVTT
+NOTE
+  Sample transcript fetched from <podcast:transcript> in the podcast feed
+  (architecture §3, podcast worker). Cues are aggregated into ~75-second
+  fixed-time chunks (§4); each chunk's first cue start becomes
+  chunks.timestamp_seconds, used to deep-link the audio player at the
+  matched moment.
+
+00:00:00.000 --> 00:00:07.500
+Welcome to episode 21 of the MJS Packaging podcast.
+
+00:00:07.500 --> 00:00:18.300
+Today I am joined by Dr Lena Weiss, who runs cold-chain qualification at a top-five biopharma. Lena, welcome.
+
+00:00:18.300 --> 00:00:22.100
+Thanks, glad to be here.
+
+00:01:15.000 --> 00:01:31.400
+Why borosilicate Type I is still the default for biologics. The honest answer is that the alternatives still trade at a quality risk we are not willing to take for an injectable program at minus eighty.
+
+00:01:31.400 --> 00:01:48.200
+Glass is well-characterised, the supply chain is mature, and the failure modes are known.
+
+00:02:30.000 --> 00:02:47.700
+What fails first when a vial is cycled too aggressively. The closure usually moves before the glass does. You will see torque drift, then liner deformation, and only then any glass effect.
+
+00:02:47.700 --> 00:03:05.300
+Designing the stability protocol to catch closure movement at the first time-point is what separates a clean qualification from a noisy one.

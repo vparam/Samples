@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Source-side fixture for the podcast ingestion worker (architecture §3).
+  Note the <atom:link rel="hub" .../> element: if present, the worker
+  subscribes via WebSub for push notifications; if absent it falls back
+  to 5-minute polling.
+-->
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>The MJS Packaging Podcast</title>
+    <link>https://www.mjspackaging.example/podcast</link>
+    <description>Conversations with packaging engineers, customers, and operators.</description>
+    <language>en-gb</language>
+    <atom:link rel="self"
+               href="https://feeds.mjspackaging.example/podcast.xml"
+               type="application/rss+xml" />
+    <atom:link rel="hub" href="https://pubsubhubbub.appspot.com/" />
+
+    <item>
+      <title>Ep. 21: pharma cold chain packaging with Dr Lena Weiss</title>
+      <link>https://feeds.mjspackaging.example/podcast/ep-21-pharma-cold-chain</link>
+      <guid isPermaLink="false">podcast-ep-21-pharma-cold-chain</guid>
+      <pubDate>Sat, 28 Mar 2026 09:00:00 +0000</pubDate>
+      <itunes:duration>00:45:34</itunes:duration>
+      <enclosure url="https://feeds.mjspackaging.example/podcast/ep21.mp3"
+                 length="43872910" type="audio/mpeg" />
+      <description>Dr Lena Weiss on what really matters in primary packaging at minus eighty.</description>
+      <podcast:transcript
+        url="https://feeds.mjspackaging.example/podcast/ep21.vtt"
+        type="text/vtt" />
+    </item>
+
+    <item>
+      <title>Ep. 19: sustainable packaging for indie beauty brands</title>
+      <link>https://feeds.mjspackaging.example/podcast/ep-19-sustainable-cosmetics</link>
+      <guid isPermaLink="false">podcast-ep-19-sustainable-cosmetics</guid>
+      <pubDate>Fri, 05 Dec 2025 09:00:00 +0000</pubDate>
+      <itunes:duration>00:38:12</itunes:duration>
+      <enclosure url="https://feeds.mjspackaging.example/podcast/ep19.mp3"
+                 length="36710002" type="audio/mpeg" />
+      <description>Founders on the unit economics of refill systems, recycled glass, and retailer conversations.</description>
+      <podcast:transcript
+        url="https://feeds.mjspackaging.example/podcast/ep19.vtt"
+        type="text/vtt" />
+    </item>
+
+  </channel>
+</rss>

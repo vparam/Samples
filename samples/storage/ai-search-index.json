@@ -1,0 +1,154 @@
+{
+  "_comment": [
+    "Azure AI Search index definition for MJS Discovery.",
+    "Hybrid retrieval (BM25 over `content` + vector search over `content_vector`)",
+    "with a semantic configuration for the L2 cross-encoder re-ranker, and a",
+    "scoring profile that implements the bounded recency multiplier from",
+    "architecture §5 (capped at ~1.3x via `boost: 1.3` and a freshness function).",
+    "POST this body to: https://{service}.search.windows.net/indexes?api-version=2024-07-01"
+  ],
+  "name": "mjs-discovery",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Edm.String",
+      "key": true,
+      "filterable": false,
+      "sortable": false,
+      "facetable": false,
+      "searchable": false
+    },
+
+    { "name": "document_id",   "type": "Edm.String", "filterable": true, "facetable": false, "searchable": false },
+    { "name": "chunk_index",   "type": "Edm.Int32",  "filterable": true, "sortable": true,  "searchable": false },
+
+    {
+      "_comment": "BM25 half of hybrid retrieval. Semantic ranker also reads this.",
+      "name": "content",
+      "type": "Edm.String",
+      "searchable": true,
+      "analyzer": "en.microsoft",
+      "retrievable": true
+    },
+    {
+      "_comment": "Heading prepended for blog/case_study/product chunks (§4).",
+      "name": "section_heading",
+      "type": "Edm.String",
+      "searchable": true,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "_comment": "Vector half. 3072 dims = text-embedding-3-large (§4).",
+      "name": "content_vector",
+      "type": "Collection(Edm.Single)",
+      "dimensions": 3072,
+      "vectorSearchProfile": "mjs-vector-profile",
+      "searchable": true,
+      "retrievable": false
+    },
+
+    { "name": "title",         "type": "Edm.String", "searchable": true,  "analyzer": "en.microsoft", "retrievable": true },
+    { "name": "source_url",    "type": "Edm.String", "filterable": true,  "searchable": false, "retrievable": true },
+    { "name": "content_type",  "type": "Edm.String", "filterable": true,  "facetable": true,  "searchable": false, "retrievable": true },
+    { "name": "publish_date",  "type": "Edm.DateTimeOffset", "filterable": true, "sortable": true, "facetable": true, "retrievable": true },
+
+    {
+      "_comment": "Source-side tags ∪ admin_overrides.tags. Merged at index-build time (§7).",
+      "name": "tags",
+      "type": "Collection(Edm.String)",
+      "filterable": true,
+      "facetable": true,
+      "searchable": true,
+      "retrievable": true
+    },
+
+    {
+      "_comment": "For video/podcast chunks: deep-link offset. Returned, not searched.",
+      "name": "timestamp_seconds",
+      "type": "Edm.Int32",
+      "filterable": false,
+      "sortable": false,
+      "searchable": false,
+      "retrievable": true
+    }
+  ],
+
+  "vectorSearch": {
+    "profiles": [
+      {
+        "name": "mjs-vector-profile",
+        "algorithm": "mjs-hnsw",
+        "vectorizer": "mjs-vectorizer-aoai"
+      }
+    ],
+    "algorithms": [
+      {
+        "name": "mjs-hnsw",
+        "kind": "hnsw",
+        "hnswParameters": { "m": 4, "efConstruction": 400, "efSearch": 500, "metric": "cosine" }
+      }
+    ],
+    "vectorizers": [
+      {
+        "_comment": "Integrated vectorisation: AI Search calls AOAI directly at query and ingest time. Production identity is managed identity (§9).",
+        "name": "mjs-vectorizer-aoai",
+        "kind": "azureOpenAI",
+        "azureOpenAIParameters": {
+          "resourceUri": "https://mjs-aoai.openai.azure.com",
+          "deploymentId": "text-embedding-3-large",
+          "modelName": "text-embedding-3-large",
+          "authIdentity": null
+        }
+      }
+    ]
+  },
+
+  "semantic": {
+    "_comment": [
+      "Semantic configuration drives the L2 cross-encoder re-ranker (§4).",
+      "We apply it to the top-50 hybrid candidates and the API only surfaces",
+      "results above the tuned threshold; otherwise the no-results state."
+    ],
+    "configurations": [
+      {
+        "name": "mjs-semantic",
+        "prioritizedFields": {
+          "titleField":       { "fieldName": "title" },
+          "contentFields":    [ { "fieldName": "content" }, { "fieldName": "section_heading" } ],
+          "keywordsFields":   [ { "fieldName": "tags" } ]
+        }
+      }
+    ]
+  },
+
+  "scoringProfiles": [
+    {
+      "_comment": [
+        "Bounded recency multiplier (§5). 'boost: 1.3' is the cap — the",
+        "freshness function ramps from 1.0 (old) to 1.3 (very recent),",
+        "applied multiplicatively to the BM25 score before fusion. Vector",
+        "scores are not boosted; freshness tilts close calls only."
+      ],
+      "name": "recency-boost",
+      "text": null,
+      "functions": [
+        {
+          "type": "freshness",
+          "fieldName": "publish_date",
+          "boost": 1.3,
+          "interpolation": "logarithmic",
+          "freshness": { "boostingDuration": "P180D" }
+        }
+      ],
+      "functionAggregation": "sum"
+    }
+  ],
+  "defaultScoringProfile": "recency-boost",
+
+  "corsOptions": null,
+  "suggesters": [],
+  "analyzers": [],
+  "tokenizers": [],
+  "tokenFilters": [],
+  "charFilters": []
+}

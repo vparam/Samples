@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Sample WebSub (PubSubHubbub) callback POSTed to our endpoint when a new
+  video is published on the subscribed channel (architecture §3, "push
+  where the source supports it"). The hub delivers an Atom snippet; the
+  worker resolves the videoId and pulls captions via the YouTube Data API.
+
+  Verify the X-Hub-Signature header against the subscription secret
+  before processing — see the YouTube ingestion worker for the verifier.
+-->
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+      xmlns="http://www.w3.org/2005/Atom">
+  <link rel="hub" href="https://pubsubhubbub.appspot.com/" />
+  <link rel="self" href="https://www.youtube.com/xml/feeds/videos.xml?channel_id=UC_MJS_PACKAGING" />
+  <title>YouTube video feed</title>
+  <updated>2026-02-22T12:14:08+00:00</updated>
+
+  <entry>
+    <id>yt:video:mjs-glass-line-tour</id>
+    <yt:videoId>mjs-glass-line-tour</yt:videoId>
+    <yt:channelId>UC_MJS_PACKAGING</yt:channelId>
+    <title>A tour of our pharma-grade glass production line</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=mjs-glass-line-tour" />
+    <author>
+      <name>MJS Packaging</name>
+      <uri>https://www.youtube.com/channel/UC_MJS_PACKAGING</uri>
+    </author>
+    <published>2026-02-22T12:00:00+00:00</published>
+    <updated>2026-02-22T12:14:00+00:00</updated>
+  </entry>
+</feed>

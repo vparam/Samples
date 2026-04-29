@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+  Sample HTML body the website worker fetches from a sitemap entry
+  (architecture §3). The worker extracts:
+    - title from <title> or <meta property="og:title">
+    - publish_date from <meta property="article:published_time">
+    - body from <article> ... </article>, falling back to <main>
+    - source_tags from <meta property="article:tag">
+
+  HTTP-layer change detection: the worker sends If-Modified-Since /
+  If-None-Match using the values cached in http_cache. A 304 response
+  short-circuits the rest of the pipeline.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Why partner with MJS: three reasons customers stay — MJS Packaging</title>
+  <meta property="og:title" content="Why partner with MJS: three reasons customers stay" />
+  <meta property="article:published_time" content="2026-03-12T09:00:00Z" />
+  <meta property="article:author" content="Tom Marsh" />
+  <meta property="article:tag" content="partnership" />
+  <meta property="article:tag" content="company" />
+  <link rel="canonical" href="https://www.mjspackaging.example/blog/why-partner-with-mjs" />
+</head>
+<body>
+  <header>...site header (stripped before hashing)...</header>
+
+  <article>
+    <h1>Why partner with MJS: three reasons customers stay</h1>
+    <p class="byline">By Tom Marsh · 12 March 2026</p>
+
+    <p>When customers ask why they should work with us, the answer comes down to three things.</p>
+
+    <h2>Depth of materials expertise</h2>
+    <p>Our packaging engineers have spent decades inside food, pharmaceutical and cosmetics supply chains, and that experience shows up in fewer line stoppages and faster qualification.</p>
+
+    <h2>Integrated supply approach</h2>
+    <p>We do not just ship containers; we co-design closures, label substrates, and secondary packaging together, so the line works the first time.</p>
+
+    <h2>Relationships that outlast the project</h2>
+    <p>Most of our largest accounts have been with MJS for more than a decade, and that continuity means the team you start with is the team you scale with.</p>
+  </article>
+
+  <footer>...site footer (stripped before hashing)...</footer>
+</body>
+</html>

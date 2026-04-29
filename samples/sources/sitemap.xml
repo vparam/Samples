@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Source-side fixture for the website ingestion worker (architecture §3).
+  The worker polls this URL every 5 minutes, uses lastmod to skip
+  unchanged pages, and falls back to ETag / If-Modified-Since on the
+  per-page fetch.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://www.mjspackaging.example/blog/why-partner-with-mjs</loc>
+    <lastmod>2026-03-12T09:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/case-studies/pharma-grade-glass-vials</loc>
+    <lastmod>2026-02-04T08:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/case-studies/food-grade-rigid-containers</loc>
+    <lastmod>2025-11-19T08:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/case-studies/cosmetics-airless-pump</loc>
+    <lastmod>2025-09-02T08:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/products/borosilicate-vials</loc>
+    <lastmod>2025-08-15T08:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/products/recycled-pet-bottles</loc>
+    <lastmod>2025-07-22T08:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/blog/sustainable-materials-roadmap</loc>
+    <lastmod>2026-01-10T08:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://www.mjspackaging.example/blog/supply-chain-resilience-q1-2026</loc>
+    <lastmod>2026-04-08T10:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+</urlset>

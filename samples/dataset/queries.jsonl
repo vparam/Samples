@@ -1,0 +1,7 @@
+{"_comment":"Sample analytics rows. Architecture §7: every query is recorded for audit and content-gap analysis."}
+{"id":1,"user_id":"oid-alice-7e1c","query_text":"pharma-grade glass case studies","result_count":3,"no_results":false,"top_result_ids":["d0000002-0000-0000-0000-000000000002","d0000009-0000-0000-0000-000000000009","d0000004-0000-0000-0000-000000000004"],"latency_ms":83,"created_at":"2026-04-29T07:01:14Z"}
+{"id":2,"user_id":"oid-alice-7e1c","query_text":"food-grade rigid containers","result_count":2,"no_results":false,"top_result_ids":["d0000003-0000-0000-0000-000000000003","d0000007-0000-0000-0000-000000000007"],"latency_ms":71,"created_at":"2026-04-29T07:02:02Z"}
+{"id":3,"user_id":"oid-tom-1f9b","query_text":"What is the population of Tokyo?","result_count":0,"no_results":true,"top_result_ids":[],"latency_ms":42,"created_at":"2026-04-29T07:03:55Z"}
+{"id":4,"user_id":"oid-tom-1f9b","query_text":"recent supply chain content","result_count":2,"no_results":false,"top_result_ids":["d0000007-0000-0000-0000-000000000007"],"latency_ms":68,"created_at":"2026-04-29T07:05:30Z"}
+{"id":5,"user_id":"oid-priya-2c8a","query_text":"reusable secondary packaging spec","result_count":1,"no_results":false,"top_result_ids":["d0000006-0000-0000-0000-000000000006"],"latency_ms":74,"created_at":"2026-04-29T07:11:08Z"}
+{"id":6,"user_id":"oid-priya-2c8a","query_text":"fluorinated polymer phase out","result_count":0,"no_results":true,"top_result_ids":[],"latency_ms":62,"created_at":"2026-04-29T07:12:42Z"}

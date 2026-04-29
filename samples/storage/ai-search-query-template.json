@@ -1,0 +1,38 @@
+{
+  "_comment": [
+    "Sample query body the Search API would POST to AI Search at request time.",
+    "POST {service}.search.windows.net/indexes/mjs-discovery/docs/search?api-version=2024-07-01",
+    "",
+    "queryType=semantic + vectorQueries=text gives hybrid (BM25 + vector via integrated",
+    "vectorisation) with the L2 cross-encoder semantic re-ranker on top of the top-50.",
+    "The Search API enforces the no-results threshold from architecture §5 by checking",
+    "@search.rerankerScore on the top result before returning to the client."
+  ],
+  "search": "Why should a customer work with us?",
+  "queryType": "semantic",
+  "semanticConfiguration": "mjs-semantic",
+  "queryLanguage": "en-us",
+  "captions": "extractive|highlight-true",
+  "answers": "none",
+  "top": 10,
+
+  "vectorQueries": [
+    {
+      "kind": "text",
+      "text": "Why should a customer work with us?",
+      "fields": "content_vector",
+      "k": 50
+    }
+  ],
+
+  "select": "document_id,title,content_type,publish_date,source_url,tags,timestamp_seconds,content,chunk_index",
+  "highlightFields": "content",
+  "scoringProfile": "recency-boost",
+
+  "_no_results_threshold_note": [
+    "AI Search returns @search.rerankerScore in the 0..4 range (4 = perfect).",
+    "The Search API rejects any top result with @search.rerankerScore < 1.5",
+    "and returns the no-results state instead. The threshold is tuned",
+    "against the golden set in CI (§8)."
+  ]
+}

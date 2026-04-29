@@ -1,0 +1,3 @@
+{"id":"01HFG-WEBSITE","kind":"website_sitemap","feed_url":"https://www.mjspackaging.example/sitemap.xml","default_content_type":"blog","enabled":true,"poll_interval_seconds":300}
+{"id":"01HFG-PODCAST","kind":"podcast_rss","feed_url":"https://feeds.mjspackaging.example/podcast.xml","default_content_type":"podcast","enabled":true,"poll_interval_seconds":300}
+{"id":"01HFG-YOUTUBE","kind":"youtube_websub","feed_url":"https://www.youtube.com/feeds/videos.xml?channel_id=UC_MJS_PACKAGING","default_content_type":"video","enabled":true,"poll_interval_seconds":300}
