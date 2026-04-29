@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MJS Packaging AI Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#FFFFFF',
+                        surface: '#F8FAFC',
+                        surfaceHover: '#F1F5F9',
+                        border: '#E2E8F0',
+                        textPrimary: '#0F172A',
+                        textSecondary: '#64748B',
+                        primary: '#10B981', // Emerald 500
+                        primaryLight: '#D1FAE5', // Emerald 100
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
+        ::-webkit-scrollbar { display: none; }
+        .glass-nav { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background-color: rgba(255, 255, 255, 0.85); }
+        .search-glow:focus-within { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.4); }
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="text-textPrimary antialiased min-h-screen flex flex-col relative">
+
+    <!-- Main Mobile Container -->
+    <main class="w-full max-w-[430px] mx-auto flex-1 flex flex-col pb-24 relative shadow-sm min-h-screen bg-background">
+        
+        <!-- Header -->
+        <header id="header" class="px-5 pt-12 pb-4 flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur z-20 border-b border-border/50">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <i class="fa-solid fa-box-open text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-[15px] font-semibold tracking-tight text-textPrimary leading-tight">MJS Content Repo</h1>
+                    <p class="text-[11px] text-textSecondary font-medium">Internal AI Assistant</p>
+                </div>
+            </div>
+            <button class="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-textSecondary hover:bg-surfaceHover transition-colors border border-border/50">
+                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="User Profile" class="w-full h-full rounded-full object-cover">
+            </button>
+        </header>
+
+        <!-- Search Hero Section -->
+        <section id="ai-search-hero" class="px-5 pt-8 pb-6 flex flex-col items-center relative">
+            <div class="absolute top-0 right-5">
+                <button class="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-full">
+                    <i class="fa-regular fa-circle-question"></i>
+                    How to ask
+                </button>
+            </div>
+            
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primaryLight to-surface flex items-center justify-center mb-6 mt-4 shadow-sm border border-primary/20 relative">
+                <i class="fa-solid fa-sparkles text-2xl text-primary absolute animate-pulse"></i>
+            </div>
+            
+            <h2 class="text-[26px] font-bold text-center mb-2 tracking-tight text-[#0F172A]">What can I find for you?</h2>
+            <p class="text-[15px] text-[#475569] text-center mb-8 max-w-[280px]">Search the MJS packaging knowledge base instantly.</p>
+
+            <div class="w-full relative search-glow transition-all duration-300 rounded-[20px] bg-white border-2 border-border shadow-sm">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                    <i class="fa-regular fa-magnifying-glass text-[16px]"></i>
+                </div>
+                <input type="text" 
+                       class="w-full bg-transparent border-none outline-none py-5 pl-[48px] pr-[56px] text-[16px] text-[#0F172A] placeholder:text-[#64748B] font-medium h-[64px]"
+                       placeholder="Ask about sustainable bottle options..." value="biodegradable resin alternatives">
+                <button class="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-[14px] bg-primary text-white flex items-center justify-center shadow-sm hover:bg-primary/90 transition-colors">
+                    <i class="fa-solid fa-arrow-up text-[15px]"></i>
+                </button>
+            </div>
+
+            <!-- Loading Progress (Hidden by default, shown during search) -->
+            <div class="w-full mt-4 flex flex-col items-center gap-2 opacity-100 transition-opacity">
+                <div class="flex items-center gap-2 text-[12px] font-medium text-primary">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span>Analyzing knowledge base...</span>
+                </div>
+                <div class="w-full h-1.5 bg-surface rounded-full overflow-hidden">
+                    <div class="h-full bg-primary w-2/3 rounded-full relative overflow-hidden">
+                        <div class="absolute inset-0 shimmer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="flex flex-wrap gap-2 mt-6 justify-center">
+                <button class="px-4 py-2 rounded-full bg-surface border border-border text-[13px] font-medium text-[#475569] hover:text-[#0F172A] hover:border-[#64748B] transition-colors">
+                    Glass vs Plastic
+                </button>
+                <button class="px-4 py-2 rounded-full bg-surface border border-border text-[13px] font-medium text-[#475569] hover:text-[#0F172A] hover:border-[#64748B] transition-colors">
+                    Q3 Pricing Guide
+                </button>
+                <button class="px-4 py-2 rounded-full bg-surface border border-border text-[13px] font-medium text-[#475569] hover:text-[#0F172A] hover:border-[#64748B] transition-colors">
+                    FDA Compliance
+                </button>
+            </div>
+        </section>
+
+        <!-- Results List -->
+        <section id="ranked-results-list" class="px-5 flex-1 pb-6">
+            <div class="flex items-center justify-between mb-4 mt-2">
+                <h3 class="text-[13px] font-semibold text-[#0F172A] uppercase tracking-wider">Top Results</h3>
+                <span class="text-[13px] font-medium text-[#475569]">Found 0 items</span>
+            </div>
+
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center py-10 px-4 text-center bg-surface rounded-[20px] border-2 border-dashed border-border/80">
+                <div class="w-16 h-16 rounded-2xl bg-white border border-border flex items-center justify-center mb-4 shadow-sm">
+                    <i class="fa-regular fa-folder-open text-2xl text-[#475569]"></i>
+                </div>
+                <h4 class="text-[18px] font-bold text-[#0F172A] mb-2">No results found</h4>
+                <p class="text-[14px] text-[#334155] max-w-[260px] leading-relaxed mb-6 font-medium">We couldn't find any documents matching "biodegradable resin alternatives" in the repository.</p>
+                
+                <div class="w-full bg-white rounded-xl p-4 border border-border mb-6 text-left shadow-sm">
+                    <h5 class="text-[13px] font-bold text-[#0F172A] mb-3 uppercase tracking-wide">Try searching for:</h5>
+                    <div class="flex flex-col gap-2">
+                        <button class="flex items-center gap-2 text-[14px] font-medium text-[#334155] hover:text-primary transition-colors text-left w-full p-2 rounded-lg hover:bg-surface">
+                            <i class="fa-solid fa-magnifying-glass text-[12px] text-primary"></i>
+                            Recyclable materials
+                        </button>
+                        <button class="flex items-center gap-2 text-[14px] font-medium text-[#334155] hover:text-primary transition-colors text-left w-full p-2 rounded-lg hover:bg-surface">
+                            <i class="fa-solid fa-magnifying-glass text-[12px] text-primary"></i>
+                            Lead times for PCR
+                        </button>
+                        <button class="flex items-center gap-2 text-[14px] font-medium text-[#334155] hover:text-primary transition-colors text-left w-full p-2 rounded-lg hover:bg-surface">
+                            <i class="fa-solid fa-magnifying-glass text-[12px] text-primary"></i>
+                            Glass vs PET cost analysis
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
+                    <button class="px-5 py-2.5 rounded-full bg-white border border-border text-[14px] font-semibold text-[#0F172A] hover:bg-surfaceHover transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
+                        <i class="fa-solid fa-rotate-right text-[12px]"></i>
+                        Clear Search
+                    </button>
+                    <button class="px-5 py-2.5 rounded-full bg-surface border border-border/50 text-[14px] font-semibold text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
+                        <i class="fa-regular fa-flag text-[12px]"></i>
+                        Report missing content
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results (Hidden in this state to show empty state) -->
+            <div class="hidden flex-col gap-3">
+                <!-- Result Card 1 -->
+                <a href="#" class="block bg-surface rounded-[16px] p-4 border border-border/60 hover:border-primary/30 hover:bg-surfaceHover transition-all shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-border text-[10px] font-semibold text-textPrimary uppercase tracking-wide">
+                            <i class="fa-solid fa-file-pdf text-red-500"></i> PDF
+                        </span>
+                        <span class="text-[11px] text-textSecondary">Oct 12, 2023</span>
+                    </div>
+                    <h4 class="text-[15px] font-semibold text-textPrimary mb-1.5 leading-snug">Sustainable Packaging Options Guide 2024</h4>
+                    <p class="text-[13px] text-textSecondary line-clamp-2 leading-relaxed">Comprehensive overview of eco-friendly materials including PCR (Post-Consumer Recycled) plastics, glass alternatives, and biodegradable resins available for Q1.</p>
+                </a>
+
+                <!-- Result Card 2 -->
+                <a href="#" class="block bg-surface rounded-[16px] p-4 border border-border/60 hover:border-primary/30 hover:bg-surfaceHover transition-all shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-border text-[10px] font-semibold text-textPrimary uppercase tracking-wide">
+                            <i class="fa-solid fa-video text-blue-500"></i> Video Transcript
+                        </span>
+                        <span class="text-[11px] text-textSecondary">Sep 28, 2023</span>
+                    </div>
+                    <h4 class="text-[15px] font-semibold text-textPrimary mb-1.5 leading-snug">Webinar: Sourcing PCR Bottles</h4>
+                    <p class="text-[13px] text-textSecondary line-clamp-2 leading-relaxed">...when discussing sustainable bottle options, the transition to 100% PCR requires careful consideration of structural integrity and clarity constraints...</p>
+                </a>
+
+                <!-- Result Card 3 -->
+                <a href="#" class="block bg-surface rounded-[16px] p-4 border border-border/60 hover:border-primary/30 hover:bg-surfaceHover transition-all shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-border text-[10px] font-semibold text-textPrimary uppercase tracking-wide">
+                            <i class="fa-solid fa-file-lines text-emerald-500"></i> Article
+                        </span>
+                        <span class="text-[11px] text-textSecondary">Aug 05, 2023</span>
+                    </div>
+                    <h4 class="text-[15px] font-semibold text-textPrimary mb-1.5 leading-snug">Vendor Comparison: Glass vs. PET</h4>
+                    <p class="text-[13px] text-textSecondary line-clamp-2 leading-relaxed">Cost analysis and lead time comparison for standard 8oz and 16oz containers across our top three domestic suppliers.</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottom-action-nav" class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto glass-nav border-t border-border/50 px-6 py-4 flex justify-between items-center z-30 pb-safe">
+            <button class="flex flex-col items-center gap-1.5 text-primary group">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <i class="fa-solid fa-house text-[18px]"></i>
+                </div>
+                <span class="text-[10px] font-semibold">Search</span>
+            </button>
+            
+            <button class="flex flex-col items-center gap-1.5 text-textSecondary hover:text-textPrimary group transition-colors">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center group-hover:bg-surface transition-colors">
+                    <i class="fa-regular fa-lightbulb text-[18px]"></i>
+                </div>
+                <span class="text-[10px] font-medium">Prompt Guide</span>
+            </button>
+
+            <button class="flex flex-col items-center gap-1.5 text-textSecondary hover:text-textPrimary group transition-colors">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center group-hover:bg-surface transition-colors">
+                    <i class="fa-regular fa-flag text-[18px]"></i>
+                </div>
+                <span class="text-[10px] font-medium">Report Issue</span>
+            </button>
+        </nav>
+
+    </main>
+
+</body>
+</html>
