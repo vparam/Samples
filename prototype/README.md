@@ -71,6 +71,28 @@ This loads the seed corpus and runs the queries above (real + adversarial)
 through the same retrieval code the API uses. Prints a pass/fail per
 query and exits non-zero on any failure — suitable for CI.
 
+### Run the full requirement-validation test suite
+
+```bash
+pytest tests/
+```
+
+The suite under `../tests/` validates the prototype against every
+requirement in the brief, organised by category:
+
+| File | Requirement category from the brief |
+|---|---|
+| `test_auth.py`        | Access Control and Security (SSO, domain restriction, session expiry, sliding-window inactivity) |
+| `test_roles.py`       | User Roles (Standard.User vs Admin enforcement) |
+| `test_search.py`      | Search and Retrieval (NL search, ranked cards, recency, source-link contract, brief's example queries) |
+| `test_grounding.py`   | Grounding and Hallucination Prevention (adversarial queries, prompt-injection attempts, presence-in-index invariant) |
+| `test_ingestion.py`   | Ingestion and Indexing (sitemap worker, RSS+VTT, YouTube push, change detection, soft-delete, metadata extraction) |
+| `test_scheduler.py`   | ~5-minute freshness target without hammering sources |
+| `test_admin.py`       | Admin tooling (tag edits without re-scrape, issue queue, analytics dashboard signals) |
+| `test_ux_contract.py` | UX (mobile-first, NL placeholder, no folder navigation, prompting guide, issue form) |
+| `test_websub.py`      | YouTube WebSub callback contract (verify handshake + signed delivery) |
+| `test_out_of_scope.py`| Asserts the brief's out-of-scope items have not crept in (no synthesis, no shareable links, no PDF, no suppression) |
+
 ### Pull a real RSS feed
 
 Sign in as `tom@mjs-packaging.example`, open the **Admin → Ingestion**
@@ -115,8 +137,11 @@ engagement (§9). Concretely, in this prototype:
   shape (`sub`, `email`, `roles`) matches Entra so the swap is
   mechanical (§7).
 - **Database:** SQLite, not Postgres. Schema is portable.
-- **Push ingestion:** poll-only in the prototype. WebSub for YouTube /
-  podcast feeds is the production change (§9).
+- **YouTube Data API for caption pulls:** the prototype's WebSub
+  endpoint accepts and verifies push notifications and ingests the
+  Atom payload's title/URL/published date as a stub video document.
+  Production fetches the full description and caption track via the
+  YouTube Data API (no API key in the local demo).
 
 ## File layout
 

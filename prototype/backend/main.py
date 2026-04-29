@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import auth, db, ingestion
+from . import auth, db, ingestion, scheduler
 from .search import get_index
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
@@ -41,6 +41,43 @@ def _startup() -> None:
     if n == 0:
         ingestion.ingest_seed()
     get_index().load()
+    # Optional periodic ingestion driver (architecture §3, 5-min poll).
+    # Off unless MJS_SCHEDULER=on so tests and `uvicorn --reload` don't
+    # double-fire ingestion. Admins can also tick manually via
+    # POST /api/admin/scheduler/tick.
+    scheduler.start_background()
+
+
+@app.on_event("shutdown")
+def _shutdown() -> None:
+    scheduler.stop_background()
+
+
+# -- sliding session middleware -------------------------------------------
+
+@app.middleware("http")
+async def sliding_session(request: Request, call_next):
+    """Re-issue the session cookie on every authenticated request so the
+    inactivity timer resets (brief: 're-authentication after inactivity').
+    Skipped for /api/auth/* so login/logout retain control of the cookie.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/api/auth/"):
+        return response
+    token = request.cookies.get("mjs_session")
+    if not token:
+        return response
+    try:
+        principal = auth.decode(token)
+    except HTTPException:
+        return response
+    new_token = auth.refresh_token(principal)
+    response.set_cookie(
+        key="mjs_session", value=new_token, httponly=True, samesite="lax",
+        max_age=auth.TOKEN_TTL_SECONDS, path="/",
+    )
+    return response
 
 
 def _now() -> str:
@@ -130,16 +167,29 @@ def ingest_seed(p: auth.Principal = Depends(auth.require_admin)) -> dict:
     return counts
 
 
-class RssIngestRequest(BaseModel):
+class FeedIngestRequest(BaseModel):
     feed_url: str
     content_type: str = "blog"
 
 
 @app.post("/api/ingest/rss")
-def ingest_rss(
-    body: RssIngestRequest, p: auth.Principal = Depends(auth.require_admin),
+def ingest_rss_endpoint(
+    body: FeedIngestRequest, p: auth.Principal = Depends(auth.require_admin),
 ) -> dict:
     counts = ingestion.ingest_rss(body.feed_url, body.content_type)
+    get_index().load()
+    return counts
+
+
+@app.post("/api/ingest/sitemap")
+def ingest_sitemap_endpoint(
+    body: FeedIngestRequest, p: auth.Principal = Depends(auth.require_admin),
+) -> dict:
+    """Sitemap-driven website crawl (brief: 'use the public sitemap as the
+    discovery starting point so nothing is missed')."""
+    counts = ingestion.ingest_sitemap(
+        body.feed_url, default_content_type=body.content_type,
+    )
     get_index().load()
     return counts
 
@@ -147,6 +197,124 @@ def ingest_rss(
 @app.get("/api/sources")
 def sources(p: auth.Principal = Depends(auth.require_user)) -> dict:
     return {"sources": ingestion.list_sources()}
+
+
+# -- managed sources & scheduler ------------------------------------------
+
+class SourceUpsertRequest(BaseModel):
+    kind: str = Field(pattern=r"^(sitemap|rss|youtube_websub)$")
+    feed_url: str
+    default_content_type: str = "blog"
+    enabled: bool = True
+    poll_interval_seconds: int = 300
+
+
+@app.get("/api/admin/sources")
+def list_managed_sources(p: auth.Principal = Depends(auth.require_admin)) -> dict:
+    return {"sources": ingestion.list_sources_table()}
+
+
+@app.post("/api/admin/sources")
+def upsert_managed_source(
+    body: SourceUpsertRequest, p: auth.Principal = Depends(auth.require_admin),
+) -> dict:
+    sid = ingestion.upsert_source(
+        kind=body.kind, feed_url=body.feed_url,
+        default_content_type=body.default_content_type,
+        enabled=body.enabled, poll_interval_seconds=body.poll_interval_seconds,
+    )
+    return {"ok": True, "id": sid}
+
+
+@app.post("/api/admin/scheduler/tick")
+def scheduler_tick(p: auth.Principal = Depends(auth.require_admin)) -> dict:
+    """Run the scheduler one cycle synchronously. Useful for demos and
+    for the test suite. The background scheduler is normally off in
+    development."""
+    results = scheduler.run_one_cycle()
+    get_index().load()
+    return {"ran": results}
+
+
+# -- YouTube WebSub callback (architecture §3, push-pipeline) -------------
+# The hub does GET for subscription verification (echoing hub.challenge)
+# and POST for content delivery. The POST body is signed; we verify
+# X-Hub-Signature against the subscription secret before ingesting.
+
+import hashlib
+import hmac as _hmac
+
+
+@app.get("/webhooks/youtube/websub")
+def websub_verify(
+    request: Request,
+    challenge: str = Query(..., alias="hub.challenge"),
+    mode: str = Query(..., alias="hub.mode"),
+    topic: str = Query(..., alias="hub.topic"),
+):
+    """Subscription verification handshake. Echo hub.challenge as plain
+    text on success; otherwise 404 (hub will retry / give up)."""
+    if mode not in ("subscribe", "unsubscribe"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "bad hub.mode")
+    with db.connect() as cx:
+        row = cx.execute(
+            "SELECT 1 FROM websub_subscriptions WHERE topic_url = ?", (topic,),
+        ).fetchone()
+    if not row:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown topic")
+    return Response(content=challenge, media_type="text/plain")
+
+
+@app.post("/webhooks/youtube/websub")
+async def websub_callback(request: Request) -> dict:
+    """Signed push delivery from the WebSub hub. Verify HMAC-SHA1 signature
+    against the per-subscription secret, then ingest the Atom payload."""
+    body = await request.body()
+    sig_header = request.headers.get("X-Hub-Signature", "")
+    if not sig_header.startswith("sha1="):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "missing signature")
+    provided = sig_header.split("=", 1)[1].strip()
+
+    # We don't know which subscription this is for without the topic; the
+    # WebSub spec carries it inside the Atom payload. Cheap: try all known
+    # secrets — acceptable for one channel; for many, look up by
+    # topic-from-payload first.
+    with db.connect() as cx:
+        rows = cx.execute("SELECT secret FROM websub_subscriptions").fetchall()
+    matched = False
+    for r in rows:
+        expected = _hmac.new(r["secret"].encode(), body, hashlib.sha1).hexdigest()
+        if _hmac.compare_digest(expected, provided):
+            matched = True
+            break
+    if not matched:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "bad signature")
+
+    counts = ingestion.ingest_youtube_payload(body)
+    get_index().load()
+    return {"ok": True, "counts": counts}
+
+
+class WebsubSubscribeRequest(BaseModel):
+    topic_url: str
+    secret: str = Field(min_length=8, max_length=200)
+
+
+@app.post("/api/admin/websub/subscribe")
+def admin_subscribe(
+    body: WebsubSubscribeRequest, p: auth.Principal = Depends(auth.require_admin),
+) -> dict:
+    """Register a WebSub subscription record locally. (In production
+    this would also POST to the hub's /subscribe endpoint; for the
+    prototype the row is enough to verify and accept callbacks.)"""
+    with db.connect() as cx:
+        cx.execute(
+            """INSERT INTO websub_subscriptions (topic_url, secret, verified_at)
+               VALUES (?, ?, ?)
+               ON CONFLICT(topic_url) DO UPDATE SET secret = excluded.secret""",
+            (body.topic_url, body.secret, _now()),
+        )
+    return {"ok": True}
 
 
 # -- admin: tag editing ----------------------------------------------------

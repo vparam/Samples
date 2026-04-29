@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "discovery.sqlite3"
+_DEFAULT_DB_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "discovery.sqlite3"
+)
+
+
+def db_path() -> Path:
+    """Resolved at call time so tests can override via MJS_DB_PATH."""
+    p = os.environ.get("MJS_DB_PATH")
+    return Path(p) if p else _DEFAULT_DB_PATH
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -76,18 +86,50 @@ CREATE TABLE IF NOT EXISTS issues (
     status TEXT NOT NULL DEFAULT 'open',
     created_at TEXT NOT NULL
 );
+
+-- HTTP-layer change-detection cache (architecture §3, two-level check).
+-- Keyed by URL; stores last ETag / Last-Modified / status from the source.
+CREATE TABLE IF NOT EXISTS http_cache (
+    url TEXT PRIMARY KEY,
+    etag TEXT,
+    last_modified TEXT,
+    last_status INTEGER,
+    last_fetched_at TEXT NOT NULL
+);
+
+-- Configured ingestion sources. The scheduler iterates this table.
+CREATE TABLE IF NOT EXISTS sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL CHECK(kind IN ('sitemap','rss','youtube_websub')),
+    feed_url TEXT NOT NULL UNIQUE,
+    default_content_type TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    poll_interval_seconds INTEGER NOT NULL DEFAULT 300,
+    last_run_at TEXT,
+    last_run_status TEXT
+);
+
+-- WebSub subscription state. Used by the YouTube push pipeline.
+CREATE TABLE IF NOT EXISTS websub_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic_url TEXT NOT NULL UNIQUE,
+    secret TEXT NOT NULL,
+    verified_at TEXT,
+    expires_at TEXT
+);
 """
 
 
 def init_db() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    p = db_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
     with connect() as cx:
         cx.executescript(SCHEMA)
 
 
 @contextmanager
 def connect():
-    cx = sqlite3.connect(DB_PATH, isolation_level=None)
+    cx = sqlite3.connect(db_path(), isolation_level=None)
     cx.row_factory = sqlite3.Row
     cx.execute("PRAGMA foreign_keys = ON")
     try:

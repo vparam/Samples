@@ -114,6 +114,21 @@ def issue_token(email: str) -> str:
     return _sign(payload)
 
 
+def refresh_token(p: "Principal") -> str:
+    """Re-issue a token for a known principal. Used by the sliding-session
+    middleware so any authenticated request resets the inactivity timer
+    (architecture §7 + brief: 're-authentication after inactivity').
+    """
+    now = int(time.time())
+    payload = {
+        "iss": ISSUER, "aud": AUDIENCE,
+        "sub": p.sub, "email": p.email, "name": p.name,
+        "roles": [p.role],
+        "iat": now, "exp": now + TOKEN_TTL_SECONDS,
+    }
+    return _sign(payload)
+
+
 def decode(token: str) -> Principal:
     payload = _verify(token)
     roles = payload.get("roles") or []

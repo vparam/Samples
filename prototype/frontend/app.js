@@ -363,5 +363,35 @@
     }
   });
 
+  $("#sitemap-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = {
+      feed_url: $("#sitemap-url").value.trim(),
+      content_type: $("#sitemap-type").value,
+    };
+    $("#sitemap-result").textContent = "crawling…";
+    try {
+      const out = await api("/api/ingest/sitemap", {
+        method: "POST", body: JSON.stringify(body),
+      });
+      $("#sitemap-result").textContent = JSON.stringify(out, null, 2);
+    } catch (err) {
+      $("#sitemap-result").textContent = "error: " + err.message;
+    }
+  });
+
+  $("#run-tick").addEventListener("click", async () => {
+    $("#run-tick").disabled = true;
+    $("#tick-result").textContent = "running…";
+    try {
+      const out = await api("/api/admin/scheduler/tick", { method: "POST" });
+      $("#tick-result").textContent = JSON.stringify(out, null, 2);
+    } catch (err) {
+      $("#tick-result").textContent = "error: " + err.message;
+    } finally {
+      $("#run-tick").disabled = false;
+    }
+  });
+
   boot();
 })();

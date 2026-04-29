@@ -119,7 +119,7 @@
       </div>
       <div class="card">
         <h3>Pull a real RSS feed</h3>
-        <p class="hint">Demonstrates a real source channel. Feed entries are merged into the index alongside seed content.</p>
+        <p class="hint">Demonstrates a real source channel. Feed entries are merged into the index alongside seed content. Podcast feeds with <code>&lt;podcast:transcript type="text/vtt"&gt;</code> get time-windowed chunks for deep-linkable retrieval.</p>
         <form id="rss-form">
           <label for="rss-url">Feed URL</label>
           <input type="url" id="rss-url" placeholder="https://example.com/feed.xml" required />
@@ -131,6 +131,30 @@
           <button type="submit">Fetch &amp; index</button>
         </form>
         <pre id="rss-result" class="result"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Crawl a public sitemap</h3>
+        <p class="hint">The brief's website ingestion path: parse <code>sitemap.xml</code>, fetch each page with conditional GET (<code>If-Modified-Since</code> / <code>ETag</code>), extract title and body, soft-delete URLs that drop out.</p>
+        <form id="sitemap-form">
+          <label for="sitemap-url">Sitemap URL</label>
+          <input type="url" id="sitemap-url" placeholder="https://example.com/sitemap.xml" required />
+          <label for="sitemap-type">Default content type</label>
+          <select id="sitemap-type">
+            <option value="blog">blog</option>
+            <option value="case_study">case_study</option>
+            <option value="product">product</option>
+          </select>
+          <button type="submit">Crawl &amp; index</button>
+        </form>
+        <pre id="sitemap-result" class="result"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Run the scheduler one cycle</h3>
+        <p class="hint">Polls every due managed source. Background scheduling is off by default; this button drives one synchronous tick for demos.</p>
+        <button id="run-tick">Run scheduler tick</button>
+        <pre id="tick-result" class="result"></pre>
       </div>
     </div>
   </section>

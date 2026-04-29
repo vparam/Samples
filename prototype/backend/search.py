@@ -36,15 +36,18 @@ _TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
 # do not push weak documents over the no-results threshold on adversarial
 # queries like "Who is the current US president?".
 _STOPWORDS = frozenset("""
-a about above across after again against all also am among an and any are aren as
-at be been before being below between both but by can cannot could did do does
-doing don each either else even every for from further had has have having he her
-here hers herself him himself his how i if in into is isn it its itself just like
-me more most my myself no nor not of off on once only or other our ours out over
-own same she should so some such t tell than that the their theirs them themselves
-then there these they this those through to too under until up us used very was we
-were what when where which while who whom why will with would you your yours
-yourself yourselves
+a about above across actually after again against all also always am among an
+and any anyone anything are aren as at be because been before being below
+between both but by can cannot could did do does doing don each either else
+ever every everyone everything for from further get got had has have having
+he her here hers herself him himself his how i if in indeed into is isn it
+its itself just kind like make me might more most much must my myself never
+no nor not now of off on once one only or other our ours out over own please
+pretty quite rather really same say see she should simply so some someone
+something somewhat still such t tell than that the their theirs them themselves
+then there these they thing things this those though through thus to too under
+until up upon us use used usually very was way we were what whatever when where
+which while who whom why will with would yet you your yours yourself yourselves
 """.split())
 
 
@@ -209,6 +212,21 @@ class Index:
                         docs_with_signal.add(self._chunks[i].document_id)
                 if len(docs_with_signal) < 2:
                     return {"results": [], "no_results": True, "reason": "single_doc_signal"}
+
+            # Per-token coverage. For a multi-token query, count how many
+            # distinct query tokens contribute any BM25 weight at all. If
+            # only one of N tokens is in the corpus (e.g. "unrestricted
+            # assistant answer" only matches "answer"), the query is
+            # out-of-domain — return no_results regardless of how many
+            # docs that one token hit.
+            if len(q_tokens) >= 3:
+                contributing = 0
+                for tok in set(q_tokens):
+                    s = self._bm25.get_scores([tok])
+                    if s.size and float(s.max()) > 0.5:
+                        contributing += 1
+                if contributing < 2:
+                    return {"results": [], "no_results": True, "reason": "single_token_signal"}
             bm25_norm = bm25_scores / bm25_max if bm25_max > 0 else bm25_scores
             hybrid = 0.6 * bm25_norm + 0.4 * cos
 
@@ -252,7 +270,7 @@ class Index:
                 ch = self._chunks[chunk_idx]
                 excerpt = _make_excerpt(ch.text, query)
                 deep_url = doc.source_url
-                if ch.timestamp_seconds and "youtube.com" in deep_url:
+                if ch.timestamp_seconds is not None and "youtube.com" in deep_url:
                     deep_url = f"{deep_url}&t={ch.timestamp_seconds}"
                 results.append({
                     "document_id": doc.id,
