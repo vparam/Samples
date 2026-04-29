@@ -5,15 +5,21 @@ import ResultCard from './ResultCard';
 interface ResultsListProps {
   results: SearchResult[];
   query: string;
+  hasSearched: boolean;
   onClear?: () => void;
   onSuggestionSelect?: (suggestion: string) => void;
+  onResultClick?: (r: SearchResult, position: number) => void;
+  onReportIssue?: () => void;
 }
 
 export default function ResultsList({
   results,
   query,
+  hasSearched,
   onClear,
   onSuggestionSelect,
+  onResultClick,
+  onReportIssue,
 }: ResultsListProps) {
   return (
     <section className="px-5 flex-1 pb-6">
@@ -29,13 +35,20 @@ export default function ResultsList({
       {results.length === 0 ? (
         <EmptyState
           query={query}
+          hasSearched={hasSearched}
           onClear={onClear}
           onSuggestionSelect={onSuggestionSelect}
+          onReportIssue={onReportIssue}
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {results.map((result) => (
-            <ResultCard key={result.id} result={result} />
+          {results.map((result, i) => (
+            <ResultCard
+              key={result.document_id}
+              result={result}
+              position={i}
+              onClick={onResultClick}
+            />
           ))}
         </div>
       )}

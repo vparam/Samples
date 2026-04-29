@@ -10,6 +10,7 @@ interface SearchHeroProps {
   onQueryChange: (value: string) => void;
   onSubmit?: () => void;
   onSuggestionSelect?: (suggestion: string) => void;
+  onShowGuide?: () => void;
   loading?: boolean;
 }
 
@@ -18,6 +19,7 @@ export default function SearchHero({
   onQueryChange,
   onSubmit,
   onSuggestionSelect,
+  onShowGuide,
   loading = false,
 }: SearchHeroProps) {
   return (
@@ -25,6 +27,7 @@ export default function SearchHero({
       <div className="absolute top-0 right-5">
         <button
           type="button"
+          onClick={onShowGuide}
           className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-full"
         >
           <FontAwesomeIcon icon={faCircleQuestion} />
