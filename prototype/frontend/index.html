@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>MJS Discovery</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">MJS Discovery</div>
+  <div class="who" id="who"></div>
+</header>
+
+<!-- Login screen --------------------------------------------------------- -->
+<section id="login-view" class="view view-login" hidden>
+  <div class="login-card">
+    <h1>Sign in</h1>
+    <p class="hint">Microsoft 365 SSO is mocked in the prototype. Use one of the demo accounts below.</p>
+    <form id="login-form">
+      <label for="login-email">Work email</label>
+      <input type="email" id="login-email" autocomplete="username"
+             placeholder="alice@mjs-packaging.example" required />
+      <button type="submit">Continue</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+    <div class="demo-accounts">
+      <p><strong>Demo accounts</strong></p>
+      <ul>
+        <li><code>alice@mjs-packaging.example</code> &mdash; Standard user</li>
+        <li><code>tom@mjs-packaging.example</code> &mdash; Admin</li>
+      </ul>
+      <p class="hint">Other domains are rejected, matching the production "MJS-only tenant" rule.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Main app ------------------------------------------------------------- -->
+<main id="app-view" class="view" hidden>
+
+  <nav class="tabs" role="tablist">
+    <button data-tab="search" class="tab active" role="tab">Search</button>
+    <button data-tab="guide"  class="tab"        role="tab">Guide</button>
+    <button data-tab="report" class="tab"        role="tab">Report issue</button>
+    <button data-tab="admin"  class="tab admin-only" hidden role="tab">Admin</button>
+  </nav>
+
+  <!-- Search tab -->
+  <section class="tab-panel active" data-panel="search">
+    <form id="search-form" role="search">
+      <input type="search" id="search-input" autocomplete="off"
+             placeholder="Ask in plain English — e.g. 'pharma-grade glass case studies'" />
+    </form>
+    <div id="search-status" class="status" aria-live="polite"></div>
+    <ol id="results" class="results"></ol>
+  </section>
+
+  <!-- Guide tab -->
+  <section class="tab-panel" data-panel="guide" hidden>
+    <div id="guide-content" class="prose"></div>
+  </section>
+
+  <!-- Report tab -->
+  <section class="tab-panel" data-panel="report" hidden>
+    <h2>Report a problem</h2>
+    <p class="hint">Use this when a result link is broken, when the wrong content surfaced, or when you searched for something you know exists but got no results.</p>
+    <form id="issue-form">
+      <label for="issue-kind">What happened?</label>
+      <select id="issue-kind" required>
+        <option value="">Select…</option>
+        <option value="broken_link">Broken link in a result</option>
+        <option value="wrong_result">Wrong content surfaced</option>
+        <option value="missing_content">Expected content but got no results</option>
+        <option value="other">Other</option>
+      </select>
+      <label for="issue-query">Query you ran (optional)</label>
+      <input type="text" id="issue-query" placeholder="e.g. recent supply chain content" />
+      <label for="issue-message">Details (optional)</label>
+      <textarea id="issue-message" rows="4" maxlength="2000" placeholder="What did you expect? Anything else admins should know."></textarea>
+      <button type="submit">Submit</button>
+      <p id="issue-status" class="status"></p>
+    </form>
+  </section>
+
+  <!-- Admin tab -->
+  <section class="tab-panel admin-only" data-panel="admin" hidden>
+    <nav class="subtabs">
+      <button data-subtab="content"   class="subtab active">Content &amp; tags</button>
+      <button data-subtab="issues"    class="subtab">Issue queue</button>
+      <button data-subtab="analytics" class="subtab">Analytics</button>
+      <button data-subtab="ingest"    class="subtab">Ingestion</button>
+    </nav>
+
+    <div data-subpanel="content" class="subpanel active">
+      <h2>Indexed content</h2>
+      <p class="hint">Edit tags inline. Saving writes to <code>admin_overrides</code> and triggers a re-index, not a re-scrape.</p>
+      <div id="docs-table"></div>
+    </div>
+
+    <div data-subpanel="issues" class="subpanel" hidden>
+      <h2>Issue queue</h2>
+      <div id="issues-list"></div>
+    </div>
+
+    <div data-subpanel="analytics" class="subpanel" hidden>
+      <h2>Analytics</h2>
+      <div id="analytics"></div>
+    </div>
+
+    <div data-subpanel="ingest" class="subpanel" hidden>
+      <h2>Ingestion</h2>
+      <div class="card">
+        <h3>Re-run seed ingestion</h3>
+        <p class="hint">Idempotent. Unchanged items are skipped via SHA-256 hash; removed items are soft-deleted.</p>
+        <button id="run-seed">Run seed ingest</button>
+        <pre id="seed-result" class="result"></pre>
+      </div>
+      <div class="card">
+        <h3>Pull a real RSS feed</h3>
+        <p class="hint">Demonstrates a real source channel. Feed entries are merged into the index alongside seed content.</p>
+        <form id="rss-form">
+          <label for="rss-url">Feed URL</label>
+          <input type="url" id="rss-url" placeholder="https://example.com/feed.xml" required />
+          <label for="rss-type">Content type</label>
+          <select id="rss-type">
+            <option value="blog">blog</option>
+            <option value="podcast">podcast</option>
+          </select>
+          <button type="submit">Fetch &amp; index</button>
+        </form>
+        <pre id="rss-result" class="result"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

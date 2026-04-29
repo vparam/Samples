@@ -1,0 +1,138 @@
+[
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/why-partner-with-mjs",
+    "content_type": "blog",
+    "title": "Why partner with MJS: three reasons customers stay",
+    "publish_date": "2026-03-12",
+    "tags": ["partnership", "company"],
+    "body": "When customers ask why they should work with us, the answer comes down to three things. First, depth of materials expertise. Our packaging engineers have spent decades inside food, pharmaceutical and cosmetics supply chains, and that experience shows up in fewer line stoppages and faster qualification. Second, an integrated supply approach. We do not just ship containers; we co-design closures, label substrates, and secondary packaging together, so the line works the first time. Third, the relationship outlasts the project. Most of our largest accounts have been with MJS for more than a decade, and that continuity means the team you start with is the team you scale with. If you are evaluating a new packaging partner, those are the three questions worth asking, of us and of anyone else."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/case-studies/pharma-grade-glass-vials",
+    "content_type": "case_study",
+    "title": "Case study: pharma-grade glass vials for an injectable launch",
+    "publish_date": "2026-02-04",
+    "tags": ["pharma", "glass", "case-study"],
+    "body": "A clinical-stage biotech needed Type I borosilicate vials that could pass USP 660 chemical resistance and hold a sensitive monoclonal antibody at minus eighty Celsius. We qualified two MJS pharma-grade glass vial SKUs against their fill-finish line, built a custom siliconisation profile for the closures, and supported their regulatory submission with a full extractables and leachables package. The launch shipped on time, with zero deviations attributable to primary packaging. This case study walks through the qualification timeline, the closure compatibility tests we ran, and how the cold-chain validation was structured."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/case-studies/food-grade-rigid-containers",
+    "content_type": "case_study",
+    "title": "Case study: food-grade rigid containers for a cold-pressed juice brand",
+    "publish_date": "2025-11-19",
+    "tags": ["food", "case-study", "rigid"],
+    "body": "A direct-to-consumer cold-pressed juice brand was hitting shelf-life limits with their incumbent PET bottle. We led a structured trial of three food-grade rigid container options: HDPE with an oxygen-scavenging liner, glass with a vacuum closure, and a multi-layer barrier PET. The barrier PET option extended unopened shelf life from fourteen to twenty-eight days while preserving the brand's existing fill line. Total landed cost rose by eleven percent but spoilage write-offs fell by thirty-seven percent, a clear net win. The case study includes the trial design, the migration testing approach, and the commercial model."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/case-studies/cosmetics-airless-pump",
+    "content_type": "case_study",
+    "title": "Case study: airless pump packaging for a clean-beauty serum",
+    "publish_date": "2025-09-02",
+    "tags": ["cosmetics", "airless", "case-study"],
+    "body": "A clean-beauty serum brand needed packaging that protected a vitamin C formulation from oxidation without using parabens or synthetic stabilisers. We specified an airless pump assembly with a polished post-consumer recycled bottle and ran accelerated stability against three competing packaging configurations. The airless pump held actives within specification for the full eighteen-month shelf life. The case study documents the accelerated stability protocol and the supplier qualification work."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/products/borosilicate-vials",
+    "content_type": "product",
+    "title": "Product: borosilicate Type I pharma-grade glass vials",
+    "publish_date": "2025-08-15",
+    "tags": ["product", "glass", "pharma"],
+    "body": "MJS borosilicate Type I vials are manufactured to USP 660 standards in fill volumes from two to one hundred millilitres. Each lot is supplied with certificates of analysis covering hydrolytic resistance, dimensional tolerances, and particulate burden. Compatible closures are listed in the product datasheet. Lead time on stock SKUs is three weeks; custom geometries are eight to twelve weeks depending on annealing schedule."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/products/recycled-pet-bottles",
+    "content_type": "product",
+    "title": "Product: post-consumer recycled PET bottles",
+    "publish_date": "2025-07-22",
+    "tags": ["product", "sustainability", "PET"],
+    "body": "Our recycled PET bottle range is supplied with up to one hundred percent post-consumer recycled content, food-contact compliant under FDA and EU 10/2011. Standard fill volumes range from one hundred millilitres to one litre. Each batch ships with traceability documentation back to the recycler. Compared to virgin PET, lifecycle carbon is reduced by approximately seventy percent. Talk to us about colour-matching constraints, which are tighter for recycled resin than virgin."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/sustainable-materials-roadmap",
+    "content_type": "blog",
+    "title": "Our sustainable materials roadmap for 2026 and beyond",
+    "publish_date": "2026-01-10",
+    "tags": ["sustainability", "roadmap"],
+    "body": "Sustainability targets are getting sharper, and packaging is where many brands feel the squeeze first. This post lays out the materials roadmap we are pursuing across three dimensions. On recycled content, we are moving the bulk of our PET range to thirty percent PCR by default this year, with a hundred percent option available on request. On bio-based materials, we have qualified two PLA grades for cold-chain dairy and are running food-contact migration testing on a third. On reuse and refill, we have published a reusable secondary packaging spec that is now in pilot with three customers. We expect mono-material flexible films to be the next big step."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/supply-chain-resilience-q1-2026",
+    "content_type": "blog",
+    "title": "Supply chain resilience: what we learned in Q1 2026",
+    "publish_date": "2026-04-08",
+    "tags": ["supply-chain", "operations"],
+    "body": "The first quarter of this year tested every assumption about lead times. Resin pricing moved sharply on two separate weeks, ocean freight from East Asia stretched by an average of nine days versus 2025, and a regional closure manufacturer went offline for ten days following a fire. Three lessons. First, dual-source closures even when the primary is performing well, because closure outages strand otherwise-healthy bottle inventory. Second, hold a strategic resin buffer where shelf life allows; a four-week buffer absorbed most of the price volatility for our food customers. Third, communicate early on lead-time changes, not at the point of order. Customers can re-plan around honest information."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/closure-compatibility-pitfalls",
+    "content_type": "blog",
+    "title": "Five closure compatibility pitfalls we see most often",
+    "publish_date": "2025-10-14",
+    "tags": ["closures", "engineering"],
+    "body": "Closure compatibility looks simple on a spec sheet and is anything but on a fill line. The five issues we see most often: thread pitch mismatches that pass dimensional checks but back off under vibration; liner materials that are chemically compatible with the product but not the headspace gas; torque specifications that assume a steel cap on a glass bottle and silently fail on plastic-on-plastic; closure-to-bottle thermal expansion mismatches that show up only after a freeze-thaw cycle; and label adhesives that wick under the closure shoulder. Each section includes a quick screening test you can run on the line before committing to a production lot."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/podcast/ep-21-pharma-cold-chain",
+    "content_type": "podcast",
+    "title": "Podcast Ep. 21: pharma cold chain packaging with Dr Lena Weiss",
+    "publish_date": "2026-03-28",
+    "tags": ["podcast", "pharma", "cold-chain"],
+    "body": "In this episode we sit down with Dr Lena Weiss, head of cold-chain qualification at a top-five biopharma, to talk about what really matters in primary packaging when you are shipping injectables at minus eighty. Topics covered: why borosilicate Type I is still the default for biologics, what fails first when a vial is cycled too aggressively, how to design a stability protocol that catches packaging issues early, and the specific failure mode that comes from over-siliconisation. Recorded in March 2026."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/podcast/ep-19-sustainable-cosmetics",
+    "content_type": "podcast",
+    "title": "Podcast Ep. 19: sustainable packaging for indie beauty brands",
+    "publish_date": "2025-12-05",
+    "tags": ["podcast", "cosmetics", "sustainability"],
+    "body": "Founders of two indie beauty brands join us to talk through the trade-offs they faced moving to refillable and recycled packaging. Topics include the unit-economics of refill systems, why recycled glass is harder than recycled PET in cosmetics, and how to talk to retailers about packaging changes that affect shelf-presence. Practical, honest, and full of numbers."
+  },
+  {
+    "source_url": "https://www.youtube.com/watch?v=mjs-glass-line-tour",
+    "content_type": "video",
+    "title": "Video: a tour of our pharma-grade glass production line",
+    "publish_date": "2026-02-22",
+    "tags": ["video", "glass", "pharma", "manufacturing"],
+    "body": "Walk through the MJS pharma-grade glass production line with our plant manager. The video covers the annealing oven calibration, the inline particle inspection station, the closure-compatibility lab, and the lot release process. Useful for quality teams evaluating MJS as a primary packaging supplier."
+  },
+  {
+    "source_url": "https://www.youtube.com/watch?v=mjs-airless-pump-explained",
+    "content_type": "video",
+    "title": "Video: how airless pump packaging actually works",
+    "publish_date": "2025-08-30",
+    "tags": ["video", "cosmetics", "airless"],
+    "body": "A short explainer on the mechanics of airless pump packaging. We cut a unit in half and show why the piston-and-bag design protects sensitive formulations from oxidation and microbial ingress. Also covers the most common misconception: airless does not mean vacuum, and that distinction matters when specifying."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/case-studies/supply-chain-redesign-cpg",
+    "content_type": "case_study",
+    "title": "Case study: redesigning packaging supply for a global CPG",
+    "publish_date": "2025-06-11",
+    "tags": ["supply-chain", "case-study", "CPG"],
+    "body": "A global consumer packaged goods company asked us to take a fresh look at their packaging supply across three product lines and four manufacturing regions. We mapped the flow, found three single points of failure, and proposed a dual-sourcing model with regional buffers sized to recovery time. Implementation took fourteen months. Net working capital rose three percent; out-of-stock weeks fell by sixty-two percent. The case study walks through the network model and the change-management approach."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/recent-supply-chain-update",
+    "content_type": "blog",
+    "title": "Recent supply chain update: April 2026",
+    "publish_date": "2026-04-22",
+    "tags": ["supply-chain", "update"],
+    "body": "A short note on current supply conditions. Resin markets are calmer than Q1, with PET and HDPE both trading inside their twelve-month bands. Ocean freight from East Asia has normalised to roughly the 2025 average. Closure availability is the one watch-item: one of the larger European manufacturers has signalled a planned maintenance shutdown in May that will tighten supply for two to three weeks. We have pre-positioned stock for affected customers; reach out if you want to confirm coverage on your SKUs."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/products/sustainable-mono-material-films",
+    "content_type": "product",
+    "title": "Product: mono-material flexible films",
+    "publish_date": "2025-05-08",
+    "tags": ["product", "sustainability", "flexible"],
+    "body": "Mono-material flexible films designed for kerbside-recyclable flow-wrap and stand-up pouch applications. Available in PE-based and PP-based variants, each with three barrier tiers depending on shelf-life requirements. Print compatibility has been verified for flexo and rotogravure. We can support migration of existing multi-layer film artwork onto the mono-material substrate; expect a six-to-eight week colour-matching cycle."
+  },
+  {
+    "source_url": "https://example.mjs-packaging.com/blog/why-customers-choose-mjs",
+    "content_type": "blog",
+    "title": "Why customers choose MJS over the big three",
+    "publish_date": "2025-04-30",
+    "tags": ["company", "differentiation"],
+    "body": "We are not the biggest packaging supplier in the market. So why do customers pick us over the big three converters? Three answers come back consistently in win-loss interviews. Speed of decision: a customer can get a quote, a sample, and a qualified material on a typical timeline of weeks rather than quarters. Engineering depth on small problems: we will spend a week on a closure problem that the bigger suppliers would not staff. And honesty about constraints: we say no to projects that do not fit, and customers tell us that saves them downstream pain. None of these are revolutionary; they are choices we make every week."
+  }
+]
