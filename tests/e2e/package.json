@@ -1,0 +1,11 @@
+{
+  "name": "mjs-discovery-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify": "node verify-login.mjs"
+  },
+  "dependencies": {
+    "puppeteer": "^24.10.0"
+  }
+}
