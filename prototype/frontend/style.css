@@ -215,3 +215,5 @@ pre.result {
     align-items: start;
   }
 }
+
+.view-login[hidden] { display: none; }
