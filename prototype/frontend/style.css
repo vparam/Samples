@@ -76,7 +76,7 @@ label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 14px; }
 }
 
 /* Login ---------------------------------------------------------------- */
-.view-login {
+.view-login:not([hidden]) {
   min-height: calc(100vh - 56px);
   display: grid; place-items: center; padding: 24px 16px;
 }
