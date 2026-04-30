@@ -101,24 +101,6 @@ industry blog), pick a content type, and **Fetch & index**. Entries are
 parsed via stdlib XML, chunked, hashed, and merged into the index
 alongside the seed content.
 
-## Architecture mapping
-
-| Architecture writeup section            | Prototype implementation                                            |
-| --------------------------------------- | ------------------------------------------------------------------- |
-| §2 Architecture overview                | `backend/main.py` (Search API), `frontend/` (Web UI)                |
-| §3 Per-source workers, change detection | `backend/ingestion.py` — seed loader + RSS loader, SHA-256 hashing  |
-| §3 Soft-delete on source removal        | `ingestion.soft_delete_missing`                                     |
-| §4 Type-aware chunking                  | `ingestion.chunk_text` (longer for blog/case_study, ts-windows for video/podcast) |
-| §4 Hybrid index                         | `backend/search.py` — BM25 + TF-IDF cosine fusion                   |
-| §5 Recency boost (bounded)              | `search._recency_multiplier` — exp decay, capped at 1.3×            |
-| §5 No-results behaviour                 | `search.Index.search` — three thresholds (weak match, threshold, single-doc signal) |
-| §6 Grounding (no LLM in response path)  | The Search API only returns rows from the SQLite index. There is **no LLM in the read path.** |
-| §6 Adversarial CI                       | `scripts/eval.py` — fails CI if adversarial queries return content  |
-| §7 Entra ID + roles                     | `backend/auth.py` — JWT-shaped tokens, role gate, domain allow-list |
-| §7 Admin tag editing without re-scrape  | `PUT /api/admin/documents/{id}/tags` writes to `admin_overrides`, triggers re-index, NOT re-scrape |
-| §7 Issue queue                          | `POST /api/issues`, admin queue at `GET /api/admin/issues`          |
-| §7 Analytics                            | `queries`, `clicks`, dashboard at `GET /api/admin/analytics`        |
-
 ## Switching to real Azure AI Search
 
 The prototype defaults to a local TF-IDF + BM25 backend so it can run
